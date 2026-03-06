@@ -17,104 +17,303 @@ Estudo e documentação de conexões com exchanges de cripto para o Squad Crypto
 - Operações em Futuros (perpétuo/termo)
 - Gerenciamento multi-tenant (múltiplos usuários/contas)
 
-## 📚 Documentação por Exchange
+## 📚 Testnet vs Mainnet
 
-### Binance
-- API REST: https://binance-docs.github.io/apidocs/
-- Websocket: https://binance-docs.github.io/apidocs/websocket_api/
-- SDK Python: https://github.com/binance/binance-connector-python
-- Rate Limits: https://binance-docs.github.io/apidocs/limits/
+### Binance ✅
 
-### Bybit
-- API REST: https://bybit-exchange.github.io/docs/
-- Websocket: https://bybit-exchange.github.io/docs/websocket/
-- SDK Python: https://github.com/bybit-exchange/bybit-official-api-python
-- Rate Limits: https://bybit-exchange.github.io/docs/rate_limit/
+| Tipo | Testnet Spot | Testnet Futures | Status | Como Obter |
+|------|--------------|-----------------|--------|--------------|
+| **Spot** | ✅ Sim | - | Ativo | 1. Acessar: https://testnet.binance.vision/<br>2. Registrar/Login<br>3. Gerar API Keys no painel |
+| **Futures** | - | ✅ Sim | Ativo | 1. Acessar: https://testnet.binancefuture.com/<br>2. Registrar/Login<br>3. Gerar API Keys no painel |
 
-### OKX
-- API REST: https://www.okx.com/docs-v5/
-- Websocket: https://www.okx.com/docs-v5/#websocket-api
-- SDK Python: https://github.com/okex/V5-Python-official-api
-- Rate Limits: https://www.okx.com/docs-v5/#system-rate-limit
+**Detalhes:**
+- **URLs:**
+  - REST Spot: `https://testnet.binance.vision/api`
+  - REST Futures: `https://testnet.binancefuture.com/fapi`
+  - WS Spot: `wss://testnet.binance.vision/ws`
+  - WS Futures: `wss://stream.binancefuture.com/ws`
+- **Ambiente:** Isolado (não conectado com mainnet)
+- **Saldos:** Podem ser resetados periodicamente
+- **Limitações:** Restrições geográficas (ex: EUA)
+- **Rate Limits:** Mesmos da mainnet
 
-## 🔑 Autenticação
+### Bybit ✅
+
+| Tipo | Testnet Spot | Testnet Futures | Status | Como Obter |
+|------|--------------|-----------------|--------|--------------|
+| **Spot** | ✅ Sim | - | Ativo | 1. Acessar: https://testnet.bybit.com/<br>2. Criar conta<br>3. Chaves API geradas no painel API da conta testnet |
+| **Futures** | - | ✅ Sim | Ativo | Mesmo processo acima |
+
+**Detalhes:**
+- **URLs:**
+  - REST Spot: `https://api-testnet.bybit.com`
+  - REST Futures: `https://api-testnet.bybit.com` (unificado)
+  - WS Spot: `wss://stream-testnet.bybit.com/v5/public/spot`
+  - WS Futures: `wss://stream-testnet.bybit.com/v5/public/linear`
+- **Ambiente:** Robusto, simula liquidez de mercado
+- **Limitações:**
+  - Motor de execução pode ser mais lento
+  - Bloqueio de IPs (China, Singapura)
+
+### OKX ⚠️
+
+| Tipo | Testnet Spot | Testnet Futures | Status | Como Obter |
+|------|--------------|-----------------|--------|--------------|
+| **Spot** | ❌ Não | - | - | Usa ambiente de produção |
+| **Futures** | ❌ Não | - | - | Usa ambiente de produção |
+
+**Alternativa - Demo Trading:**
+- **Modo:** Não há site separado
+- **Como usar:** 
+  1. No site principal, mude para "Demo Trading"
+  2. Gere chaves API na aba Demo Trading
+- **Obrigatório:** Enviar header `x-simulated-trading: 1` em todas as requisições
+
+**Detalhes:**
+- **URLs:**
+  - REST: `https://www.okx.com` (produção)
+  - WS: `wss://wspap.okx.com:443/ws/v5/public?brokerId=9999`
+- **Limitações:**
+  - Chaves expiram após 14 dias (se não vinculadas a IP)
+  - Usa ambiente de produção (não isolado)
+  - Sem garantia de isolamento
+
+## 📊 Comparativo de Testnet
+
+| Exchange | Testnet Spot | Testnet Futures | Teste Alternativo | Recomendação |
+|----------|--------------|-----------------|------------------|--------------|
+| Binance | ✅ Oficial | ✅ Oficial | Portal isolado | **Melhor opção** (completo e isolado) |
+| Bybit | ✅ Oficial | ✅ Oficial | Portal robusto | **Segunda opção** (robusto) |
+| OKX | ❌ Não | ❌ Não | Demo Trading | **Use apenas para testes rápidos** (não isolado) |
+
+## 🔑 Autenticação e Permissões
 
 ### Chaves API Necessárias
-- **API Key**: Identificador da aplicação
-- **Secret Key**: Chave secreta para assinar requisições
-- **Passphrase**: (Opcional para algumas exchanges) Frase de recuperação
+
+| Exchange | Spot | Futures | Notas |
+|----------|------|---------|--------|
+| Binance | API Key + Secret | API Key + Secret | Passphrase opcional para alguns endpoints |
+| Bybit | API Key + Secret | API Key + Secret | Diferentes para Spot e Derivatives |
+| OKX | API Key + Secret | API Key + Secret + Passphrase | Passphrase OBRIGATÓRIA |
 
 ### Permissões por Tipo de Operação
-| Operação | Permissões Necessárias |
-|-----------|-------------------------|
-| Spot Trading | `Read` + `Trade` |
-| Futures Trading | `Futures` + `Futures Trading` |
-| Leitura de Saldo | `Read` |
-| Streaming | `Read` + `Trading Stream` |
 
-## 📊 Endpoints Principais
+| Operação | Permissões Necessárias | Binance | Bybit | OKX |
+|-----------|-------------------------|---------|--------|-----|
+| Leitura de Saldo | `Read` | ✅ | ✅ | ✅ |
+| Trading Spot | `Read` + `Trade` | ✅ | ✅ | ✅ |
+| Trading Futures | `Futures` + `Futures Trading` | ✅ | ✅ | ✅ |
+| Streaming de Dados | `Read` + `Trading Stream` | ✅ | ✅ | ✅ |
 
-### Spot Trading
-- `/api/v3/account` - Saldo da conta
-- `/api/v3/order` - Criar ordem
-- `/api/v3/openOrders` - Ordens abertas
-- `/api/v3/myTrades` - Histórico de trades
+## 📖 Documentação por Exchange
 
-### Futures Trading
-- `/fapi/v2/balance` - Saldo futures
-- `/fapi/v1/order` - Criar ordem futures
-- `/fapi/v1/openOrders` - Ordens abertas futures
-- `/fapi/v1/userTrades` - Histórico de trades futures
+### Binance
 
-## 🔗 Estrutura de Conexão
+**API REST Oficial:**
+- Spot: https://binance-docs.github.io/apidocs/
+- Futures: https://binance-docs.github.io/apidocs/futures/
+- Testnet Spot: https://testnet.binance.vision/en/
+- Testnet Futures: https://testnet.binancefuture.com/en/
 
-```python
-class ExchangeConnection:
-    def __init__(self, api_key, secret_key, passphrase=None):
-        self.api_key = api_key
-        self.secret_key = secret_key
-        self.passphrase = passphrase
+**WebSocket:**
+- Spot: https://binance-docs.github.io/apidocs/websocket_api/
+- Futures: https://binance-docs.github.io/apidocs/fapi/websocket/
 
-    def connect(self):
-        # Estabelece conexão WebSocket
-        pass
+**SDK Python Oficial:**
+- Mainnet: https://github.com/binance/binance-connector-python
+- Testnet: Mesmo SDK (apenas altera URL base)
 
-    def get_balance(self):
-        # Busca saldo da conta
-        pass
+**Rate Limits:**
+- Mainnet: 1200 requests/min
+- Testnet: Mesmos da mainnet
 
-    def place_order(self, symbol, side, type, amount, price=None):
-        # Cria ordem
-        pass
+### Bybit
 
-    def get_open_orders(self, symbol=None):
-        # Busca ordens abertas
-        pass
+**API REST Oficial (V5):**
+- Mainnet: https://bybit-exchange.github.io/docs/
+- Testnet: https://bybit-exchange.github.io/docs/en/testnet/
 
-    def cancel_order(self, symbol, order_id):
-        # Cancela ordem
-        pass
+**WebSocket:**
+- Mainnet: https://bybit-exchange.github.io/docs/websocket/
+- Testnet: https://bybit-exchange.github.io/docs/websocket_testnet/
+
+**SDK Python Oficial:**
+- Mainnet: https://github.com/bybit-exchange/bybit-official-api-python
+- Testnet: Mesmo SDK (apenas altera URL base)
+
+**Rate Limits:**
+- Mainnet: 100 requests/min
+- Testnet: Mesmos da mainnet
+
+### OKX
+
+**API REST Oficial (V5):**
+- Mainnet: https://www.okx.com/docs-v5/
+- Demo Trading: https://www.okx.com/docs-v5/#trading-account-balance-demo-trading
+
+**WebSocket:**
+- Mainnet: https://www.okx.com/docs-v5/#websocket-api
+- Simulado: Header `x-simulated-trading: 1`
+
+**SDK Python Oficial:**
+- Mainnet: https://github.com/okex/V5-Python-official-api
+- Demo: Mesmo SDK (apenas com header de simulação)
+
+**Rate Limits:**
+- Mainnet: 20 requests/min
+- Demo: Mesmos da mainnet
+
+## 📚 Guias de Conexão
+
+### Binance
+
+**Para Testnet:**
+```bash
+# 1. Acesse https://testnet.binance.vision/
+# 2. Faça login com e-mail ou conta Google
+# 3. Vá em "API Management"
+# 4. Crie API Keys (API Key + Secret Key)
+# 5. Defina permissões: "Reading" + "Spot & Margin Trading" + "Futures Trading"
 ```
 
-## 🔄 Multi-Tenancy
+**Para Mainnet:**
+```bash
+# 1. Acesse https://www.binance.com/en/my/settings/api-management
+# 2. Crie API Keys
+# 3. Defina permissões conforme necessidade
+```
 
-### Estrutura de Usuários/Contas
+### Bybit
+
+**Para Testnet:**
+```bash
+# 1. Acesse https://testnet.bybit.com/
+# 2. Faça login (e-mail ou Google)
+# 3. Crie conta
+# 4. Vá em "API Keys"
+# 5. Crie API Key (API Key + Secret Key)
+```
+
+**Para Mainnet:**
+```bash
+# 1. Acesse https://www.bybit.com/user/api-management
+# 2. Crie API Key (API Key + Secret Key)
+```
+
+### OKX
+
+**Para Demo Trading:**
+```bash
+# 1. Acesse https://www.okx.com/account/my-api
+# 2. Clique em "Demo Trading"
+# 3. Mude para "Demo Trading"
+# 4. Gere API Key (API Key + Secret Key + Passphrase)
+# 5. IMPORTANTE: Enviar header `x-simulated-trading: 1` em todas as requisições
+```
+
+**Para Mainnet:**
+```bash
+# 1. Acesse https://www.okx.com/account/my-api
+# 2. Gere API Key (API Key + Secret Key + Passphrase)
+```
+
+## 📚 Guias Especialistas
+
+### 1. Binance Connection Guide
+- **Arquivo:** `docs/binance_guide.md`
+- **Cobertura:**
+  - API REST (Spot e Futures)
+  - WebSocket
+  - SDK Python oficial
+  - Autenticação
+  - Rate limits
+  - Permissões
+  - Endpoints principais
+  - Testnet vs Mainnet
+
+### 2. Bybit Connection Guide
+- **Arquivo:** `docs/bybit_guide.md`
+- **Cobertura:**
+  - API REST V5 (Spot e Futures)
+  - WebSocket
+  - SDK Python oficial
+  - Autenticação
+  - Rate limits
+  - Permissões
+  - Endpoints principais
+  - Testnet vs Mainnet
+  - Spot vs Futures
+
+### 3. OKX Connection Guide
+- **Arquivo:** `docs/okx_guide.md`
+- **Cobertura:**
+  - API REST V5 (Spot e Futures)
+  - WebSocket
+  - SDK Python oficial
+  - Autenticação (com Passphrase)
+  - Rate limits
+  - Permissões
+  - Endpoints principais
+  - Demo Trading (alternativa ao Testnet)
+  - Header `x-simulated-trading: 1`
+
+## 📦 Instalação de SDKs Python
+
+```bash
+# Binance
+pip install python-binance
+
+# Bybit
+pip install pybit
+
+# OKX
+pip install okx
+```
+
+## 📦 Bibliotecas de Suporte
+
+```bash
+# WebSockets
+pip install websockets
+
+# Requisições assíncronas
+pip install aiohttp
+
+# Gerenciamento de variáveis de ambiente
+pip install python-dotenv
+
+# Criptografia (assinatura)
+pip install cryptography
+```
+
+## 🔗 Estrutura Multi-Tenant
+
 ```python
 # Multi-tenant: múltiplos usuários com múltiplas contas
 exchange_connections = {
     'binance': {
         'user1': {
-            'spot': Connection(api_key1, secret_key1),
-            'futures': Connection(api_key2, secret_key2)
+            'spot_testnet': Connection(api_key_spot_test, secret_key_spot_test),
+            'futures_testnet': Connection(api_key_futures_test, secret_key_futures_test),
+            'spot_mainnet': Connection(api_key_spot_main, secret_key_spot_main),
+            'futures_mainnet': Connection(api_key_futures_main, secret_key_futures_main)
         },
         'user2': {
-            'spot': Connection(api_key3, secret_key3)
+            'spot_testnet': Connection(api_key_spot_2, secret_key_spot_2)
         }
     },
     'bybit': {
         'user1': {
-            'spot': Connection(api_key4, secret_key4),
-            'futures': Connection(api_key5, secret_key5)
+            'spot_testnet': Connection(api_key_bybit_spot, secret_key_bybit_spot),
+            'futures_testnet': Connection(api_key_bybit_futures, secret_key_bybit_futures),
+            'spot_mainnet': Connection(api_key_bybit_main, secret_key_bybit_main),
+            'futures_mainnet': Connection(api_key_bybit_futures_main, secret_key_bybit_futures_main)
+        }
+    },
+    'okx': {
+        'user1': {
+            'demo': Connection(api_key_okx_demo, secret_key_okx_demo, passphrase_okx_demo),
+            'mainnet': Connection(api_key_okx_main, secret_key_okx_main, passphrase_okx_main)
         }
     }
 }
@@ -123,52 +322,81 @@ exchange_connections = {
 ## ⚠️ Limitações e Riscos
 
 ### Rate Limits
-- Binance: 1200 requests/min
-- Bybit: 100 requests/min
-- OKX: 20 requests/min
 
-### Riscos
-- Perda de chaves API
-- Execução não intencional de ordens
-- Latência em conexões WebSocket
-- Dados desincronizados
+| Exchange | Rate Limit | Como Respeitar |
+|----------|------------|----------------|
+| Binance | 1200 req/min | Implementar backoff exponencial |
+| Bybit | 100 req/min | Implementar backoff exponencial |
+| OKX | 20 req/min | Implementar backoff exponencial |
+
+### Riscos Comuns
+
+- **Perda de chaves API** - Armazene de forma segura
+- **Execução não intencional** - Nunca execute ordens em mainnet sem verificação
+- **Latência em conexões WebSocket** - Monitore e implemente reconexão
+- **Dados desincronizados** - Use ordens ID para rastreamento
+- **Testnet não isolado (OKX)** - Use apenas para testes rápidos
+
+## 📊 Estrutura do Projeto
+
+```
+estudos-exchange-connections/
+├── docs/
+│   ├── binance_guide.md      ✅
+│   ├── bybit_guide.md        ✅
+│   └── okx_guide.md           ✅
+├── src/
+│   ├── binance_connection.py
+│   ├── bybit_connection.py
+│   └── okx_connection.py
+├── examples/
+│   ├── binance_spot.py
+│   ├── binance_futures.py
+│   ├── bybit_spot.py
+│   ├── bybit_futures.py
+│   ├── okx_spot.py
+│   └── okx_futures.py
+├── .env.example
+├── README.md                 ✅
+└── requirements.txt
+```
 
 ## 📝 Próximos Passos
 
 1. ✅ Criar repositório GitHub
-2. ⏳ Subagentes especialistas:
-   - Binance Exchange Specialist
-   - Bybit Exchange Specialist
-   - OKX Exchange Specialist
-3. ⏳ Implementar classes de conexão
-4. ⏳ Desenvolver exemplos de Spot e Futures
-5. ⏳ Implementar estrutura multi-tenant
-6. ⏳ Criar testes de conexão
+2. ✅ Inicializar com README
+3. ✅ Criar planilha de estudos
+4. ✅ Subagentes especialistas (Binance, Bybit, OKX)
+5. ✅ Documentação de Testnet vs Mainnet
+6. ⏳ Implementar classes de conexão
+7. ⏳ Implementar exemplos de Spot e Futures
+8. ⏳ Implementar estrutura multi-tenant
+9. ⏳ Criar testes de conexão
+10. ⏳ Commitar e push para GitHub
 
 ## 🔗 Links
 
-- Planilha de Estudos: https://docs.google.com/spreadsheets/d/1XuH2kmObJ1a7AXO2L_4Yk80rG42wBVlbBWrcSvc7cIk/edit
-- Repositório GitHub: https://github.com/mvdevolder2/estudos-exchange-connections
+- **Planilha:** https://docs.google.com/spreadsheets/d/1XuH2kmObJ1a7AXO2L_4Yk80rG42wBVlbBWrcSvc7cIk/edit
+- **Repositório:** https://github.com/mvdevolder2/estudos-exchange-connections
+- **README:** https://github.com/mvdevolder2/estudos-exchange-connections#readme
 
-## 📚 Recursos
+## 🚀 Recursos
 
-### SDKs Python Oficiais
-- Binance: `pip install python-binance`
-- Bybit: `pip install pybit`
-- OKX: `pip install okx`
+### Documentação Oficial
+- Binance: https://binance-docs.github.io/apidocs/
+- Bybit: https://bybit-exchange.github.io/docs/
+- OKX: https://www.okx.com/docs-v5/
 
-### Bibliotecas de Suporte
-- `websockets` - Conexões WebSocket
-- `aiohttp` - Requisições assíncronas
-- `python-dotenv` - Gerenciamento de variáveis de ambiente
+### Testnets
+- Binance Testnet Spot: https://testnet.binance.vision/
+- Binance Testnet Futures: https://testnet.binancefuture.com/
+- Bybit Testnet: https://testnet.bybit.com/
+- OKX Demo Trading: https://www.okx.com (mudar para "Demo Trading")
 
-## 🏷️ Status
-
-- 🟢 Binance: Aguardando especialista
-- 🟢 Bybit: Aguardando especialista
-- 🟢 OKX: Aguardando especialista
-- 🟡 Multi-tenancy: Arquitetura definida
-- 🟡 Spot/Futures: Escopo definido
+### SDKs Python
+- Binance: https://github.com/binance/binance-connector-python
+- Bybit: https://github.com/bybit-exchange/bybit-official-api-python
+- OKX: https://github.com/okex/V5-Python-official-api
 
 ---
 
