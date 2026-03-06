@@ -1,0 +1,387 @@
+name: BinanceConnection
+version: 1.0.0
+description: |
+  Classe de conexão para API Binance (Spot e Futures).
+  Suporta autenticação via API Key + Secret Key.
+  Suporta Spot Trading e Futures Trading.
+  Suporta WebSocket para streaming de dados em tempo real.
+
+config:
+  type: object
+  properties:
+    api_key:
+      type: string
+      description: Chave da API Binance (obtida no painel de gerenciamento)
+      required: true
+      sensitive: true
+
+    secret_key:
+      type: string
+      description: Chave secreta da API Binance (obtida no painel de gerenciamento)
+      required: true
+      sensitive: true
+
+    testnet:
+      type: boolean
+      description: Usar ambiente de testnet (Binance Spot Testnet ou Binance Futures Testnet)
+      default: false
+
+    timeout:
+      type: integer
+      description: Timeout para requisições REST (em segundos)
+      default: 10
+      minimum: 1
+      maximum: 30
+
+    enable_ws:
+      type: boolean
+      description: Habilitar conexão WebSocket para streaming de dados
+      default: true
+
+  oneOf:
+    - description: Configuração Spot Trading
+      properties:
+        type:
+          type: string
+          enum: [spot]
+          default: spot
+
+        rest_url:
+          type: string
+          description: URL base da API REST Spot
+          pattern: ^https://(api|testnet\.binance)\.(vision|com)
+
+        ws_url:
+          type: string
+          description: URL do WebSocket Spot
+          pattern: ^wss://(stream\.binance\.vision|stream\.binance\.com)
+
+    - description: Configuração Futures Trading
+      properties:
+        type:
+          type: string
+          enum: [futures]
+          default: futures
+
+        rest_url:
+          type: string
+          description: URL base da API REST Futures
+          pattern: ^https://(fapi|testnet\.binancefuture)\.(vision|com)
+
+        ws_url:
+          type: string
+          description: URL do WebSocket Futures
+          pattern: ^wss://(fstream\.binance\.com|stream\.binancefuture\.com)
+
+methods:
+  # Autenticação e Conexão
+  connect:
+    description: Estabelece conexão WebSocket (se habilitado)
+    parameters: []
+    returns:
+      type: boolean
+      description: true se conexão estabelecida, false caso contrário
+
+  disconnect:
+    description: Fecha conexão WebSocket
+    parameters: []
+    returns:
+      type: boolean
+      description: true se fechado com sucesso
+
+  # Leitura de Dados
+  get_balance:
+    description: Busca saldo da conta (Spot ou Futures)
+    parameters:
+      - name: asset
+        type: string
+        description: (Opcional) Filtra por ativo específico (ex: USDT, BTC)
+        required: false
+    returns:
+      type: array
+      description: Lista de saldos por ativo
+      items:
+        type: object
+        properties:
+          asset:
+            type: string
+            description: Código do ativo (ex: USDT)
+          free:
+            type: string
+            description: Saldo disponível
+          locked:
+            type: string
+            description: Saldo bloqueado
+
+  get_order_book:
+    description: Busca livro de ofertas de um par
+    parameters:
+      - name: symbol
+        type: string
+        description: Par de trading (ex: BTCUSDT)
+        required: true
+      - name: limit
+        type: integer
+        description: Quantidade de níveis de livro
+        default: 100
+        required: false
+    returns:
+      type: object
+      description: Livro de ofertas (bids e asks)
+
+  # Trading
+  place_order:
+    description: Cria ordem de compra ou venda
+    parameters:
+      - name: symbol
+        type: string
+        description: Par de trading (ex: BTCUSDT)
+        required: true
+      - name: side
+        type: string
+        enum: [BUY, SELL]
+        description: Direção da ordem
+        required: true
+      - name: type
+        type: string
+        enum: [MARKET, LIMIT, STOP_LOSS_LIMIT, STOP_LOSS_MARKET]
+        description: Tipo de ordem
+        required: true
+      - name: quantity
+        type: string
+        description: Quantidade do ativo
+        required: true
+      - name: price
+        type: string
+        description: Preço da ordem (requerido para ordens tipo LIMIT)
+        required: false
+      - name: stop_price
+        type: string
+        description: Preço de stop (requerido para ordens STOP_LOSS)
+        required: false
+      - name: time_in_force
+        type: string
+        enum: [GTC, IOC, FOK]
+        description: Duração da ordem
+        required: false
+    returns:
+      type: object
+      description: Detalhes da ordem criada (orderId, status, etc.)
+
+  cancel_order:
+    description: Cancela ordem existente
+    parameters:
+      - name: symbol
+        type: string
+        description: Par de trading (ex: BTCUSDT)
+        required: true
+      - name: order_id
+        type: string
+        description: ID da ordem a cancelar
+        required: true
+    returns:
+      type: boolean
+      description: true se cancelada com sucesso
+
+  cancel_all_orders:
+    description: Cancela todas as ordens abertas de um par
+    parameters:
+      - name: symbol
+        type: string
+        description: Par de trading (ex: BTCUSDT)
+        required: true
+    returns:
+      type: array
+      description: Lista de IDs das ordens canceladas
+
+  # Ordens
+  get_open_orders:
+    description: Busca ordens abertas
+    parameters:
+      - name: symbol
+        type: string
+        description: (Opcional) Filtra por par de trading específico
+        required: false
+    returns:
+      type: array
+      description: Lista de ordens abertas
+
+  get_order_history:
+    description: Busca histórico de trades executados
+    parameters:
+      - name: symbol
+        type: string
+        description: Par de trading (ex: BTCUSDT)
+        required: true
+      - name: limit
+        type: integer
+        description: Quantidade de trades a retornar
+        default: 500
+        required: false
+      - name: from_id
+        type: integer
+        description: (Opcional) Trade ID para buscar histórico a partir de
+        required: false
+    returns:
+      type: array
+      description: Lista de trades executados
+
+  # Posições (apenas Futures)
+  get_position:
+    description: Busca posição aberta em Futures
+    parameters:
+      - name: symbol
+        type: string
+        description: Par de trading (ex: BTCUSDTUSDT)
+        required: true
+    returns:
+      type: object
+      description: Detalhes da posição (quantity, entryPrice, markPrice, unrealizedProfit, leverage)
+
+  get_all_positions:
+    description: Busca todas as posições abertas em Futures
+    parameters: []
+    returns:
+      type: array
+      description: Lista de todas as posições abertas
+
+  # WebSocket
+  start_stream:
+    description: Inicia stream de dados em tempo real
+    parameters:
+      - name: streams
+        type: array
+        description: Lista de streams a subscrever (ex: trade, depth, kline, ticker)
+        required: true
+        items:
+          type: string
+      - name: on_message
+        type: function
+        description: Callback para receber mensagens do stream
+        required: true
+    returns:
+      type: boolean
+      description: true se stream iniciado com sucesso
+
+  stop_stream:
+    description: Para stream de dados em tempo real
+    parameters: []
+    returns:
+      type: boolean
+      description: true se stream parado com sucesso
+
+errors:
+  -1000: UNKNOWN
+    description: Erro desconhecido
+  -1001: DISCONNECTED
+    description: Desconectado do servidor
+
+  -1002: UNAUTHORIZED
+    description: Autenticação falhou (API Key ou Secret Key inválidos)
+
+  -1003: TOO_MANY_REQUESTS
+    description: Rate limit excedido (Binance: 1200 req/min)
+
+  -1004: INVALID_SYMBOL
+    description: Par de trading inválido
+
+  -1005: INVALID_ORDER_TYPE
+    description: Tipo de ordem inválido
+
+  -1006: INVALID_QUANTITY
+    description: Quantidade inválida
+
+  -1007: ORDER_NOT_FOUND
+    description: Ordem não encontrada
+
+  -1008: INSUFFICIENT_BALANCE
+    description: Saldo insuficiente
+
+events:
+  on_connected:
+    description: Emitido quando conexão WebSocket estabelecida
+
+  on_disconnected:
+    description: Emitido quando conexão WebSocket fechada
+
+  on_order_update:
+    description: Emitido quando ordem é atualizada ou executada
+
+  on_trade_update:
+    description: Emitido quando novo trade executado
+
+  on_balance_update:
+    description: Emitido quando saldo é atualizado
+
+  on_error:
+    description: Emitido quando ocorre erro na conexão ou requisição
+    parameters:
+      - error_code:
+          type: integer
+          description: Código do erro
+      - message:
+          type: string
+          description: Mensagem de erro
+
+examples:
+  python: |
+    from binance_connection import BinanceConnection
+
+    # Spot Trading
+    conn = BinanceConnection(
+        api_key="...",
+        secret_key="...",
+        type="spot",
+        testnet=False
+    )
+
+    # Futures Trading
+    conn = BinanceConnection(
+        api_key="...",
+        secret_key="...",
+        type="futures",
+        testnet=False
+    )
+
+    # Buscar saldo
+    balance = conn.get_balance(asset="USDT")
+
+    # Criar ordem
+    order = conn.place_order(
+        symbol="BTCUSDT",
+        side="BUY",
+        type="LIMIT",
+        quantity="0.001",
+        price="50000"
+    )
+
+  nodejs: |
+    const BinanceConnection = require('./binance_connection');
+
+    // Spot Trading
+    const conn = new BinanceConnection({
+        apiKey: '...',
+        secretKey: '...',
+        type: 'spot',
+        testnet: false
+    });
+
+    // Futures Trading
+    const conn = new BinanceConnection({
+        apiKey: '...',
+        secretKey: '...',
+        type: 'futures',
+        testnet: false
+    });
+
+    // Buscar saldo
+    const balance = await conn.getBalance({ asset: 'USDT' });
+
+    // Criar ordem
+    const order = await conn.placeOrder({
+        symbol: 'BTCUSDT',
+        side: 'BUY',
+        type: 'LIMIT',
+        quantity: '0.001',
+        price: '50000'
+    });

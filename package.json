@@ -1,0 +1,33 @@
+{
+  "name": "estudos-exchange-connections",
+  "version": "1.0.0",
+  "description": "Estudo e documentação de conexões com exchanges Binance, Bybit e OKX",
+  "main": "src/binance_connection.js",
+  "scripts": {
+    "test:binance": "node examples/binance_spot.js",
+    "test:bybit": "node examples/bybit_spot.js",
+    "test:okx": "node examples/okx_spot.js"
+  },
+  "keywords": [
+    "binance",
+    "bybit",
+    "okx",
+    "exchange",
+    "crypto",
+    "api",
+    "trading"
+  ],
+  "author": "mvdevolder2",
+  "license": "MIT",
+  "dependencies": {
+    "crypto": "^1.0.1",
+    "node-fetch": "^3.3.2"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mvdevolder2/estudos-exchange-connections.git"
+  }
+}

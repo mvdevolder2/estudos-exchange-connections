@@ -1,0 +1,27 @@
+# Estudos Exchange Connections - Requirements
+# Python SDKs e dependências para conexões com Binance, Bybit e OKX
+
+# SDKs Oficiais
+python-binance>=1.0.15          # Binance Python SDK (para API REST e WebSocket)
+pybit>=5.0.0                  # Bybit Python SDK (API V5)
+okx>=1.0.0                     # OKX V5 Python SDK (não disponível oficial, usar via pip okx)
+
+# WebSockets
+websockets>=11.0               # Conexões WebSocket assíncronas
+aiohttp>=3.8.2               # Requisições HTTP assíncronas (para SDKs e clientes REST)
+
+# Segurança e Criptografia
+cryptography>=41.0.7           # Assinatura HMAC SHA256 (Binance, Bybit)
+hmac>=2.0.1                     # HMAC (alternativo para assinatura)
+pybase64>=0.22.0               # Base64 encoding (OKX)
+
+# Utilitários
+python-dotenv>=1.0.0           # Gerenciamento de variáveis de ambiente
+requests>=2.31.0               # Cliente HTTP (para SDKs que não usam aiohttp)
+pyyaml>=6.0                     # Leitura de arquivos YAML (para config)
+typing-extensions>=4.8.0        # Extensões para typing
+
+# Desenvolvimento
+pytest>=7.4.3                   # Testes unitários (opcional)
+black>=23.7.0                  # Formatação de código (opcional)
+isort>=5.12.0                 # Ordenação de imports (opcional)

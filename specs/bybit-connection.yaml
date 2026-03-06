@@ -1,0 +1,571 @@
+name: BybitConnection
+version: 1.0.0
+description: |
+  Classe de conexão para API Bybit V5 (Spot e Derivatives/Futures).
+  Suporta autenticação via API Key + Secret Key.
+  Suporta Spot Trading, Derivatives Trading e Futures Trading.
+  Suporta WebSocket para streaming de dados.
+
+config:
+  type: object
+  properties:
+    api_key:
+      type: string
+      description: Chave da API Bybit (obtida no painel de gerenciamento)
+      required: true
+      sensitive: true
+
+    secret_key:
+      type: string
+      description: Chave secreta da API Bybit (obtida no painel de gerenciamento)
+      required: true
+      sensitive: true
+
+    category:
+      type: string
+      enum: [spot, linear, inverse, option]
+      description: Categoria de trading (Spot, Linear Futures, Inverse Futures, Options)
+      default: spot
+
+    testnet:
+      type: boolean
+      description: Usar ambiente de testnet (https://testnet.bybit.com/)
+      default: false
+
+    timeout:
+      type: integer
+      description: Timeout para requisições REST (em segundos)
+      default: 10
+      minimum: 1
+      maximum: 30
+
+    enable_ws:
+      type: boolean
+      description: Habilitar conexão WebSocket para streaming de dados
+      default: true
+
+methods:
+  # Autenticação e Conexão
+  connect:
+    description: Estabelece conexão WebSocket (se habilitado)
+    parameters: []
+    returns:
+      type: boolean
+      description: true se conexão estabelecida, false caso contrário
+
+  disconnect:
+    description: Fecha conexão WebSocket
+    parameters: []
+    returns:
+      type: boolean
+      description: true se fechado com sucesso
+
+  # Leitura de Dados
+  get_balance:
+    description: Busca saldo da conta (Wallet Balance)
+    parameters:
+      - name: coin
+        type: string
+        description: (Opcional) Filtra por moeda específica (ex: USDT)
+        required: false
+    returns:
+      type: array
+      description: Lista de saldos por moeda
+      items:
+        type: object
+        properties:
+          coin:
+            type: string
+            description: Código da moeda
+          wallet_balance:
+            type: string
+            description: Saldo disponível na carteira
+
+  get_wallet_balance:
+    description: Busca saldo de uma moeda específica
+    parameters:
+      - name: coin
+        type: string
+        description: Código da moeda (ex: USDT)
+        required: true
+    returns:
+      type: object
+      properties:
+        coin:
+          type: string
+          description: Código da moeda
+        wallet_balance:
+          type: string
+          description: Saldo disponível
+
+  # Trading
+  place_order:
+    description: Cria ordem
+    parameters:
+      - name: category
+        type: string
+        enum: [spot, linear, inverse, option]
+        description: Categoria de trading
+        required: true
+      - name: symbol
+        type: string
+        description: Par de trading (ex: BTCUSDT)
+        required: true
+      - name: side
+        type: string
+        enum: [Buy, Sell]
+        description: Direção da ordem
+        required: true
+      - name: order_type
+        type: string
+        enum: [Market, Limit, LimitMaker]
+        description: Tipo de ordem
+        required: true
+      - name: qty
+        type: string
+        description: Quantidade (ex: 0.01)
+        required: true
+      - name: price
+        type: string
+        description: Preço (obrigatório para ordens tipo Limit)
+        required: false
+      - name: time_in_force
+        type: string
+        enum: [GTC, IOC, FOK, PostOnly]
+        description: Tipo de validação
+        required: false
+        default: GTC
+      - name: reduce_only
+        type: boolean
+        description: Reduz apenas, não adiciona posição
+        required: false
+        default: false
+      - name: take_profit:
+        type: string
+        description: Preço de take profit
+        required: false
+      - name: stop_loss:
+        type: string
+        description: Preço de stop loss
+        required: false
+      - name: tp_slippage:
+        type: string
+        description: Slippage de take profit
+        required: false
+      - name: sl_slippage:
+        type: string
+        description: Slippage de stop loss
+        required: false
+      - name: close_on_trigger:
+        type: boolean
+        description: Fecha posição ao ser atingido
+        required: false
+    returns:
+      type: object
+      description: Detalhes da ordem criada (orderId, status, etc.)
+
+  amend_order:
+    description: Modifica ordem existente
+    parameters:
+      - name: category
+        type: string
+        enum: [spot, linear, inverse, option]
+        required: true
+      - name: symbol
+        type: string
+        required: true
+      - name: order_id
+        type: string
+        required: true
+      - name: order_type
+        type: string
+        enum: [Limit, LimitMaker]
+        required: false
+      - name: qty
+        type: string
+        required: false
+      - name: price
+        type: string
+        required: false
+      - name: take_profit:
+        type: string
+        required: false
+      - name: stop_loss:
+        type: string
+        required: false
+      - name: tp_slippage:
+        type: string
+        required: false
+      - name: sl_slippage:
+        type: string
+        required: false
+      - name: trailing_stop:
+        type: string
+        required: false
+    returns:
+      type: object
+      description: Detalhes da ordem modificada
+
+  cancel_order:
+    description: Cancela ordem
+    parameters:
+      - name: category
+        type: string
+        enum: [spot, linear, inverse, option]
+        required: true
+      - name: symbol
+        type: string
+        required: true
+      - name: order_id
+        type: string
+        required: true
+    returns:
+      type: object
+      description: Resultado do cancelamento
+
+  cancel_all_orders:
+    description: Cancela todas as ordens de um símbolo
+    parameters:
+      - name: category
+        type: string
+        enum: [spot, linear, inverse, option]
+        required: true
+      - name: symbol
+        type: string
+        required: true
+      - name: settle_coin
+        type: string
+        required: false
+      - name: options
+        type: object
+        properties:
+          client_order_id:
+            type: string
+          stop_order_type:
+            type: string
+          tp_slippage:
+            type: string
+          sl_slippage:
+            type: string
+          take_profit:
+            type: string
+          stop_loss:
+            type: string
+    returns:
+      type: array
+      description: Lista de ordens canceladas
+
+  # Ordens
+  get_open_orders:
+    description: Busca ordens abertas
+    parameters:
+      - name: category
+        type: string
+        enum: [spot, linear, inverse, option]
+        required: true
+      - name: symbol
+        type: string
+        description: (Opcional) Filtra por símbolo específico
+        required: false
+      - name: settle_coin
+        type: string
+        required: false
+      - name: order_id
+        type: string
+        required: false
+      - name: order_filter
+        type: object
+        properties:
+          order_status:
+            type: array
+            items:
+              type: string
+            stop_order_type:
+              type: string
+        limit:
+          type: integer
+        cursor:
+          type: string
+    returns:
+      type: object
+      description: Lista de ordens abertas
+
+  get_order_history:
+    description: Busca histórico de trades executados
+    parameters:
+      - name: category
+        type: string
+        enum: [spot, linear, inverse, option]
+        required: true
+      - name: symbol
+        type: string
+        required: true
+      - name: options
+        type: object
+        properties:
+          orderId:
+            type: string
+          orderCategory:
+            type: string
+          orderType:
+            type: string
+          createTime:
+            type: string
+          updateTime:
+            type: string
+          limit:
+            type: integer
+          cursor:
+            type: string
+    returns:
+      type: array
+      description: Lista de trades executados
+
+  # Posições (Futures/Derivatives)
+  get_position:
+    description: Busca posição aberta em Futures/Derivatives
+    parameters:
+      - name: category
+        type: string
+        enum: [linear, inverse, option]
+        required: true
+      - name: symbol
+        type: string
+        required: true
+    returns:
+      type: object
+      description: Detalhes da posição (symbol, side, size, unrealizedPnL, avgEntryPrice, markPrice)
+
+  get_all_positions:
+    description: Busca todas as posições abertas em Futures/Derivatives
+    parameters:
+      - name: category
+        type: string
+        enum: [linear, inverse, option]
+        required: true
+      - name: settle_coin
+        type: string
+        required: false
+    returns:
+      type: array
+      description: Lista de todas as posições abertas
+
+  close_position:
+    description: Fecha posição aberta
+    parameters:
+      - name: category
+        type: string
+        enum: [linear, inverse, option]
+        required: true
+      - name: symbol
+        type: string
+        required: true
+      - name: side
+        type: string
+        enum: [Buy, Sell]
+        required: true
+      - name: qty
+        type: string
+        required: true
+    returns:
+      type: object
+      description: Resultado do fechamento
+
+  # Leverage (apenas Futures)
+  set_leverage:
+    description: Define alavancagem para um símbolo
+    parameters:
+      - name: category
+        type: string
+        enum: [linear, inverse]
+        required: true
+      - name: symbol
+        type: string
+        required: true
+      - name: buy_leverage:
+        type: string
+        required: true
+      - name: sell_leverage:
+        type: string
+        required: true
+    returns:
+      type: object
+      description: Alavancagem definida
+
+  # WebSocket
+  start_stream:
+    description: Inicia stream de dados em tempo real
+    parameters:
+      - name: category
+        type: string
+        enum: [spot, linear, inverse, option]
+        required: true
+      - name: streams
+        type: array
+        description: Lista de streams a subscrever (trade, depth, kline, ticker)
+        required: true
+        items:
+          type: string
+      - name: on_message
+        type: function
+        description: Callback para receber mensagens do stream
+        required: true
+    returns:
+      type: boolean
+      description: true se stream iniciado com sucesso
+
+  stop_stream:
+    description: Para stream de dados
+    parameters:
+      - name: category
+        type: string
+        required: true
+    returns:
+      type: boolean
+      description: true se stream parado com sucesso
+
+errors:
+  -10001: UNKNOWN
+    description: Erro desconhecido
+
+  -10002: DISCONNECTED
+    description: Desconectado do servidor
+
+  -10003: UNAUTHORIZED
+    description: Autenticação falhou (API Key ou Secret Key inválidos)
+
+  -10004: TOO_MANY_REQUESTS
+    description: Rate limit excedido (Bybit: 100 req/min)
+
+  -10005: INVALID_SYMBOL
+    description: Símbolo de trading inválido
+
+  -10006: INVALID_ORDER_TYPE
+    description: Tipo de ordem inválido
+
+  -10007: INVALID_QUANTITY
+    description: Quantidade inválida
+
+  -10008: INSUFFICIENT_BALANCE
+    description: Saldo insuficiente
+
+events:
+  on_connected:
+    description: Emitido quando conexão WebSocket estabelecida
+
+  on_disconnected:
+    description: Emitido quando conexão WebSocket fechada
+
+  on_order_update:
+    description: Emitido quando ordem é atualizada ou executada
+
+  on_trade_update:
+    description: Emitido quando novo trade executado
+
+  on_position_update:
+    description: Emitido quando posição é atualizada
+
+  on_balance_update:
+    description: Emitido quando saldo é atualizado
+
+  on_error:
+    description: Emitido quando ocorre erro na conexão ou requisição
+    parameters:
+      - name: error_code
+        type: integer
+        description: Código do erro
+      - name: message
+        type: string
+        description: Mensagem de erro
+
+examples:
+  python: |
+    from bybit_connection import BybitConnection
+
+    # Spot Trading
+    conn = BybitConnection(
+        api_key="...",
+        secret_key="...",
+        category="spot",
+        testnet=False
+    )
+
+    # Futures Trading (Linear)
+    conn = BybitConnection(
+        api_key="...",
+        secret_key="...",
+        category="linear",
+        testnet=False
+    )
+
+    # Buscar saldo
+    balance = conn.get_wallet_balance(coin="USDT")
+
+    # Criar ordem Spot
+    order = conn.place_order(
+        category="spot",
+        symbol="BTCUSDT",
+        side="Buy",
+        order_type="Limit",
+        qty="0.001",
+        price="50000"
+    )
+
+    # Criar ordem Futures
+    order = conn.place_order(
+        category="linear",
+        symbol="BTCUSDTUSDT",
+        side="Buy",
+        order_type="Limit",
+        qty="1"
+    )
+
+    # Buscar posição
+    position = conn.get_position(category="linear", symbol="BTCUSDTUSDT")
+
+  nodejs: |
+    const BybitConnection = require('./bybit_connection');
+
+    // Spot Trading
+    const conn = new BybitConnection({
+        apiKey: '...',
+        secretKey: '...',
+        category: 'spot',
+        testnet: false
+    });
+
+    // Futures Trading (Linear)
+    const conn = new BybitConnection({
+        apiKey: '...',
+        secretKey: '...',
+        category: 'linear',
+        testnet: false
+    });
+
+    // Buscar saldo
+    const balance = await conn.getWalletBalance({ coin: 'USDT' });
+
+    // Criar ordem Spot
+    const order = await conn.placeOrder({
+        category: 'spot',
+        symbol: 'BTCUSDT',
+        side: 'Buy',
+        orderType: 'Limit',
+        qty: '0.001',
+        price: '50000'
+    });
+
+    // Criar ordem Futures
+    const order = await conn.placeOrder({
+        category: 'linear',
+        symbol: 'BTCUSDTUSDT',
+        side: 'Buy',
+        orderType: 'Limit',
+        qty: '1'
+    });
+
+    // Buscar posição
+    const position = await conn.getPosition({
+        category: 'linear',
+        symbol: 'BTCUSDTUSDT'
+    });
