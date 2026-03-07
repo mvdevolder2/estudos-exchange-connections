@@ -374,7 +374,123 @@ estudos-exchange-connections/
 9. ⏳ Criar testes de conexão
 10. ⏳ Commitar e push para GitHub
 
-## 🔗 Links
+## 🚀 Início Rápido
+
+### 1. Clone e Instale
+```bash
+git clone https://github.com/mvdevolder2/estudos-exchange-connections.git
+cd estudos-exchange-connections
+
+# Python
+pip install -r requirements.txt
+
+# Node.js (opcional)
+npm install
+```
+
+### 2. Configure Suas Chaves
+```bash
+# Copie o arquivo de exemplo
+cp .env.example .env
+
+# Abra e preencha APENAS as chaves que você vai usar
+nano .env
+```
+
+### 3. Teste Primeiro em Testnet
+```bash
+# Teste Binance Spot (sem risco)
+python -c "from src.binance_connection import BinanceConnection; conn = BinanceConnection(api_key='$BINANCE_SPOT_TEST_API_KEY', secret_key='$BINANCE_SPOT_TEST_API_SECRET', testnet=True); print(conn.get_balance(asset='USDT'))"
+```
+
+### 4. Leia a Documentação
+- **README.md** - Visão geral do projeto
+- **.env.example** - Todas as chaves que você precisa
+- **specs/** - Especificações técnicas de cada exchange
+- **examples/** - Exemplos de código funcionais
+
+### 5. Use as Classes de Conexão
+```python
+# Binance
+from src.binance_connection import BinanceConnection
+
+conn_binance = BinanceConnection(
+    api_key=os.getenv('BINANCE_SPOT_TEST_API_KEY'),
+    secret_key=os.getenv('BINANCE_SPOT_TEST_API_SECRET'),
+    testnet=True
+)
+
+# Bybit
+from src.bybit_connection import BybitConnection
+
+conn_bybit = BybitConnection(
+    api_key=os.getenv('BYBIT_SPOT_TEST_API_KEY'),
+    secret_key=os.getenv('BYBIT_SPOT_TEST_API_SECRET'),
+    category='spot',
+    testnet=True
+)
+
+# OKX
+from src.okx_connection import OKXConnection
+
+conn_okx = OKXConnection(
+    api_key=os.getenv('OKX_DEMO_API_KEY'),
+    secret_key=os.getenv('OKX_DEMO_API_SECRET'),
+    passphrase=os.getenv('OKX_DEMO_API_PASSPHRASE'),
+    simulated_trading=True
+)
+```
+
+### 6. Comece a Construir
+- Teste cada método das classes de conexão
+- Crie seu próprio wrapper para multi-tenancy
+- Implemente sua lógica de trading
+- Documente seu código
+
+---
+
+## 🆘 Suporte
+
+- **Documentação Oficial:**
+  - Binance: https://binance-docs.github.io/apidocs/
+  - Bybit: https://bybit-exchange.github.io/docs/
+  - OKX: https://www.okx.com/docs-v5/
+
+- **Comunidade:**
+  - Telegram do Squad: @CryptoSquad
+  - Issues no GitHub: https://github.com/mvdevolder2/estudos-exchange-connections/issues
+
+---
+
+## 📝 Notas Importantes
+
+- **Testnet ≠ Mainnet** - Ambientes completamente isolados
+- **OKX Demo** - Usa ambiente de produção, apenas simulação
+- **Rate Limits** - Respeite os limites de cada exchange
+- **Permissões** - Use sempre as mínimas necessárias (Read + Trade)
+- **Chaves Teste** - Revoque-as periodicamente se suspeitar de vazamento
+- **Mainnet** - Use apenas quando seu código foi testado completamente
+
+---
+
+## ✅ Pronto para Operar?
+
+Antes de operar em Mainnet com dinheiro real:
+
+- [ ] Código testado em Testnet
+- [ ] Lógica de trading validada
+- [ ] Stop-loss implementado
+- [ ] Gerenciamento de risco configurado
+- [ ] Chaves de mainnet com permissões mínimas
+- [ ] Estratégias paper-trading validadas
+- [ ] Testes de estresse realizados
+
+---
+
+**Criado em:** 2026-03-07
+**Squad:** Crypto
+**Lead:** Data (crypto-lead)
+**Licença:** MIT
 
 - **Planilha:** https://docs.google.com/spreadsheets/d/1XuH2kmObJ1a7AXO2L_4Yk80rG42wBVlbBWrcSvc7cIk/edit
 - **Repositório:** https://github.com/mvdevolder2/estudos-exchange-connections
